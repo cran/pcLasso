@@ -1,0 +1,209 @@
+---
+title: "Introduction to pcLasso"
+author: "Kenneth Tay and Rob Tibshirani"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to pcLasso}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+`pcLasso` is a package that fits the principal components lasso, a new method for obtaining sparse models for supervised learning problems. pcLasso shrinks predictions toward the top principal components of the feature matrix. It combines the power of Principal Components Regression with the sparsity of the lasso.  The method is also able to handle grouped features, where the features can belong to one of many groups. In that case, pcLasso shrinks the component of the parameter vector towards the top principal componets of the corresponding feature matrix.
+
+
+We introduce some notation that we will use throughout this vignette. Let there be $n$ observations, each with feature vector $x_i \in \mathbb{R}^p$ and response $y_i$. Let $X \in \mathbb{R}^{n \times p}$ denote the overall feature matrix, and let $y \in \mathbb{R}^n$ denote the vector of responses. Assume our data features come in $K$ groups, and let $X_k \in \mathbb{R}^{n \times p_k}$ denote the feature matrix for group $k$. In the simplest case with $K=1$, there is no feature grouping.
+
+For each feature matrix $X_k$, let $X_k = U_k D_k V_k^T$ be its singular value decomposition (SVD). Let $D_k$ have diagonal entries $d_{k1}, d_{k2}, \dots$, and let $D_{d_{k1}^2 - d_{kj}^2}$ denote the diagonal matrix such that the $j$th diagonal entry is $d_{k1} - d_{kj}^2$.
+
+`pcLasso` solves the optimization problem
+
+<p align="center">
+$\underset{\beta_0,\beta}{\text{minimize}} \quad \dfrac{1}{n} \displaystyle\sum_{i=1}^N w_i \ell (y_i, \beta_0 + \beta^T x_i) + \lambda \|\beta\|_1 + \dfrac{\theta}{2} \sum_{k = 1}^K \beta_k^T V_k D_{d_{k1}^2 - d_{kj}^2} V_k^T \beta_k.$
+</p>
+
+In the above, $\ell(y, \eta)$ is the negative log-likelihood contribution for observation $i$; e.g. in the Gaussian case $\ell(y, \eta) = \frac{1}{2}(y - \eta)^2$. $w_i$ is the observation weight given to observation $i$ (by default $w_i = 1$ for all $i$). $\beta_k$ is the subvector of $\beta$ which corresponds to group $k$. $\lambda$ and $\theta$ are non-negative hyperparameters. `pcLasso` solves the optimization problem for a grid of $\lambda$ values; $\theta$ must be specified in advance by the user.
+
+`pcLasso` uses cyclical coordinate descent, which successively optimizes the objective function over each parameter with all other parameters fixed, cycling repeatedly until convergence.
+
+The package also includes methods for prediction and plotting, and a function which performs $k$-fold cross-validation.
+
+For more details, please see our paper on [arXiv](https://arxiv.org/abs/1810.04651).
+
+## Installation
+
+The simplest way to obtain `pcLasso` is to install it directly from CRAN. Type the following command in R console:
+```{r eval=FALSE}
+install.packages("pcLasso")
+```
+
+This command downloads the R package and installs it to the default directories. Users may change add a `repos` option to the function call to specify which repository to download from, depending on their locations and preferences.
+
+Alternatively, users can download the package source at CRAN and type Unix commands to install it to the desired location.
+
+## Quick Start
+
+The purpose of this section is to give users a general sense of the package. We will briefly go over the main functions of the package, as well as some key options. More details are given in later sections.
+
+First, we load the `pcLasso` package:
+```{r}
+library(pcLasso)
+```
+
+Let's generate some data:
+```{r}
+set.seed(944)
+n <- 100
+p <- 20
+x <- matrix(rnorm(n*p), n, p)
+beta <- matrix(c(rep(2, 5), rep(0, 15)), ncol = 1)
+y <- x %*% beta + rnorm(n)
+```
+
+We fit the model using the most basic call to `pcLasso`:
+```{r results="hide"}
+fit <- pcLasso(x, y, ratio = 0.8)
+```
+
+In addition to the feature matrix `x` and the response `y`, the user must specify either `theta` or `ratio` (but not both). `theta` is the hyperparameter value for the last term in the objective function. The scale for `theta` depends on `x` and `y` and hence can be hard to determine a priori. Instead of specifying `theta`, we recommend that the user specify `ratio`, a hyperparameter whose value lies in the interval $(0,1]$. Roughly speaking, smaller values of `ratio` represent greater shrinkage to the top principal components. (`ratio = 1` gives the usual lasso.)
+
+If the  argument `verbose` is set to `TRUE`, while the function is running, `pcLasso` informs the user which `lambda` in the `lambda` sequence it is currently processing by printing it to the console.
+
+If `ratio` is passed to `pcLasso`, it internally computes the corresponding value of `theta` and uses that in minimizing the objective function. This value can be retrieved as the value of `theta` in the output list.
+
+The function `pcLasso` returns a `pcLasso` object. At the moment, the only way to extract model coefficients is to use list syntax on the returned object. For example, the code below extracts the intercept and coefficients for the model at the 20th `lambda` value:
+```{r}
+# intercept
+fit$a0[20]
+
+# coefficients
+fit$beta[, 20]
+```
+
+A `pcLasso` object has a `nzero` key which tells us the number of non-zero model coefficients at each value of `lambda`:
+```{r}
+fit$nzero
+```
+
+We can make predictions using a `pcLasso` object by calling the `predict` method. Each column gives the predictions for a value of `lambda`.
+```{r}
+# get predictions for 20th model
+predict(fit, x[1:5, ])[, 20]
+```
+
+### Grouped features
+
+By default, `pcLasso` assumes that all the features in `x` belong to one group. If the features come in groups, `pcLasso` can make use of this information in the model-fitting procedure.
+
+Assume our features come in 4 (non-overlapping) groups of size 5:
+```{r}
+groups <- vector("list", 4)
+for (k in 1:4) {
+    groups[[k]] <- 5 * (k-1) + 1:5
+}
+groups
+```
+
+We can use this information in our fit by specifying the `groups` option. `groups` must be a list of length $K$ (the number of groups). `groups[[k]]` is a vector of column indices representing the features which belong to group $k$. (For example, `groups[[1]] <- c(3, 4, 6)` means that columns 3, 4 and 6 of `x` belong to group 1.) Every feature must belong to at least one group.
+```{r results="hide"}
+fit <- pcLasso(x, y, ratio = 0.8, groups = groups)
+```
+
+One advantage of `pcLasso` is that the algorithm works with overlapping groups as well. For example, we modify the groups list such that features 6 and 7 also belong to group 1. We can make the same call to `pcLasso`:
+```{r}
+groups[[1]] <- 1:7
+groups
+```
+```{r results="hide"}
+fit <- pcLasso(x, y, ratio = 0.8, groups = groups)
+```
+
+One thing to note with overlapping groups is that the model coefficients and the number of non-zero coefficients are stored differently in the output object. To get the coefficients in the original feature space, look at the `origbeta` key:
+```{r}
+# intercept at 20th model: same as before
+fit$a0[20]
+
+# coefficients at 20th model: look at origbeta instead
+fit$origbeta[, 20]
+```
+
+To get the number of non-zero coefficients in the original feature space, look at `orignzero`:
+```{r}
+fit$orignzero
+```
+
+For more information on what the algorithm does in the case of overlapping groups, see Section 3.2 of [our paper](https://arxiv.org/abs/1810.04651).
+
+
+### Cross-validation (CV)
+
+We can perform $k$-fold cross-validation (CV) with `cv.pcLasso`. It does 10-fold cross-validation by default:
+```{r results="hide"}
+cvfit <- cv.pcLasso(x, y, groups = groups, ratio = 0.8)
+```
+
+We can change the number of folds using the `nfolds` option:
+```{r results="hide"}
+cvfit <- cv.pcLasso(x, y, groups = groups, ratio = 0.8, nfolds = 5)
+```
+
+If we want to specify which observation belongs to which fold, we can do that by specifying the `foldid` option, which is a vector of length $n$, with the $i$th element being the fold number for observation $i$.
+```{r results="hide"}
+foldid <- sample(rep(seq(10), length = n))
+cvfit <- cv.pcLasso(x, y, groups = groups, ratio = 0.8, foldid = foldid)
+```
+
+A `cv.pcLasso` call returns a `cv.pcLasso` object. We can plot this object to get the CV curve with error bars (one standard error in each direction). The left vertical dotted line represents `lambda.min`, the `lambda` value which attains minimum CV error, while the right vertical dotted line represents `lambda.1se`, the largest `lambda` value with CV error within one standard error of the minimum CV error.
+```{r fig.width=5, fig.height=4}
+plot(cvfit)
+```
+
+The numbers at the top represent the number of non-zero coefficients for each model in the original feature space. If the groups are overlapping, we can plot the number of non-zero coefficients for each model in the expanded feature space instead by setting `orignz = FALSE`:
+```{r fig.width=5, fig.height=4}
+plot(cvfit, orignz = FALSE)
+```
+
+The two special `lambda` values can be extracted directly from the `cv.pcLasso` object as well:
+```{r}
+cvfit$lambda.min
+cvfit$lambda.1se
+```
+
+Predictions can be made from  the fitted `cv.pcLasso` object. By default, predictions are given for `lambda` being equal to `lambda.1se`. To get predictions are `lambda.min`, set `s = "lambda.min"`.
+```{r}
+predict(cvfit, x[1:5, ])   # s = lambda.1se
+predict(cvfit, x[1:5, ], s = "lambda.min")
+```
+
+## Other options
+
+Here are some other options that one may specify for the `pcLasso` and `cv.pcLasso` functions:
+
+-   `w`: The user can pass a vector of length $n$ representing observation weights. The squared residual of the observations are weighted according to this vector. By default, this is set to 1 for all observations. 
+
+-   `family`: The default value for the `family` option of the `pcLasso` and `cv.pcLasso` functions is `gaussian`. Use this default when `y` is a quantitative variable (i.e. takes values along the real number line). The objective function for the Gaussian family is
+
+    <p align="center">
+    $\underset{\beta_0,\beta}{\text{minimize}} \quad \dfrac{1}{2n} \displaystyle\sum_{i=1}^N w_i (y_i - \beta_0 - \beta^T x_i)^2 + \lambda \|\beta\|_1 + \dfrac{\theta}{2} \sum_{k = 1}^K \beta_k^T V_k D_{d_{k1}^2 - d_{kj}^2} V_k^T \beta_k.$
+    </p>
+    
+    As before, $\lambda$ and $\theta$ are hyperparameters. The user passes a specific value of `theta` (or its `ratio ` equivalent) to the `pcLasso` and `cv.pcLasso` functions, and the function computes the model fit for a path of `lambda` values.
+    
+    For binary prediction, use `family = binomial`. In this setting, the response `y` should be a numeric vector containing just 0s and 1s.
+    
+-   `SVD_info`: A list containing SVD information that the algorithm uses. The user typically does not need to provide these options to `pcLasso`; `pcLasso` will compute them from the given data. Internally, `cv.pcLasso` provides these options to `pcLasso` for computational efficiency.
+
+-   `lambda`: The `lambda` sequence at which the model fit will be computed. This is typically not provided by the user: the program can construct the sequence on its own. When automatically generated, the `lambda` sequence is determined by `lambda.max` (internally computed) and `lambda.min.ratio`. (`lambda.min.ratio` is the ratio of smallest value of the generated `lambda` sequence, say `lambda.min`, to `lambda.max`.) The program generates `nlam` values (default is 100) linear on the log scale from `lambda.max` down to `lambda.min`.
+
+-   `standardize`: If set to `TRUE`, the columns of the feature matrix `x` are scaled to have unit variance before the algorithm is run.
+
+For more information, type `?pcLasso` or `?cv.pcLasso`.

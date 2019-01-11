@@ -1,0 +1,2 @@
+After compiling mortran, you have to manually edit pclasso.f 
+in two lines, to be call dblepr("lambda=",  etc

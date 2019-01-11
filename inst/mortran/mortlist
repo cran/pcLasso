@@ -1,0 +1,374 @@
+1     mortran 2.0     (version of 7/04/75 mod 7/4/87 (ajc))                           processor version of 27 feb 78 
+
+   85     0   %c80                                                                            
+   86     0   %u5                                                                             
+   87     0   "                                                                               
+   88  "  0   c                                                                               
+   89  "  0   c                          Lariat (8/12/18)                                     
+   90  "  0   c                                                                               
+   91  "  0   c                                                                               
+   92  "  0   c call pclasso(no,ni,x,y,w,theta,ng,mg,aa,ne,nx,nlam,ulam,thr,maxit,verbose,ao,i
+   93  "  0   c   no = number of observations                                                 
+   94  "  0   c   ni = number of predictor variables                                          
+   95  "  0   c   x(no,ni) = predictor data matrix (all columns centered)                     
+   96  "  0   c   y(no) = response vector (centered)                                          
+   97  "  0   c   w(no)= observation weights                                                  
+   98  "  0   c   theta = group regularization parameter                                      
+   99  "  0   c   ng = number of groups                                                       
+  100  "  0   c   mg(ng+1) = vector points to groups in aa                                    
+  101  "  0   c   aa(ni,max_group_size) = group covarience matricies in order                 
+  102  "  0   c   ne = maximum number of variables allowed to enter largest model             
+  103  "  0   c        (stopping criterion)                                                   
+  104  "  0   c   nx = maximum number of variables allowed to enter all models                
+  105  "  0   c        along path (memory allocation, nx > ne).                               
+  106  "  0   c   nlam = number of lambda values                                              
+  107  "  0   c   ulam(nlam) = user supplied lambda values in descending order                
+  108  "  0   c   thr = convergence threshold for each lamda solution.                        
+  109  "  0   c      iterations stop when the maximum reduction in the criterion value        
+  110  "  0   c      as a result of each parameter update over a single pass                  
+  111  "  0   c      is less than thr times the null criterion value.                         
+  112  "  0   c      (suggested value, thr=1.0e-5)                                            
+  113  "  0   c   maxit = maximum allowed number of passes over the data for all lambda       
+  114  "  0   c      values (suggested values, maxit = 100000)                                
+  115  "  0   c  verbose:  should progress be printed?   0/1= no/yes                          
+  116  "  0   c                                                                               
+  117  "  0   c output:                                                                       
+  118  "  0   c                                                                               
+  119  "  0   c   ao(nx,nlam) = compressed coefficient values for each solution               
+  120  "  0   c   ia(nx) = pointers to compressed coefficients                                
+  121  "  0   c   kin(nlam) = number of compressed coefficients for each solution             
+  122  "  0   c   nlp = actual number of passes over the data for all lambda values           
+  123  "  0   c   jerr = error flag:                                                          
+  124  "  0   c      jerr  = 0 => no error                                                    
+  125  "  0   c      jerr > 0 => fatal error - no output returned                             
+  126  "  0   c         jerr < 7777 => memory allocation error                                
+  127  "  0   C      jerr < 0 => non fatal error - partial output:                            
+  128  "  0   c         Solutions for larger lamdas (1:(k-1)) returned.                       
+  129  "  0   c         jerr = -k => convergence for kth lamda value not reached              
+  130  "  0   c            after maxit (see above) iterations.                                
+  131  "  0   c         jerr = -10000-k => number of non zero coefficients along path         
+  132  "  0   c            exceeds nx (see above) at kth lamda value.                         
+  133  "  0   c                                                                               
+  134  "  0   c                                                                               
+  135  "  0   c                                                                               
+  136  "  0   c least-squares utility routines:                                               
+  137  "  0   c                                                                               
+  138  "  0   c                                                                               
+  139  "  0   c uncompress coefficient vector for particular solution:                        
+  140  "  0   c                                                                               
+  141  "  0   c call uncomp(ni,ao,ia,kin,a)                                                   
+  142  "  0   c                                                                               
+  143  "  0   c input:                                                                        
+  144  "  0   c                                                                               
+  145  "  0   c    ni = total number of predictor variables                                   
+  146  "  0   c    ao(nx) = compressed coefficient values for the solution                    
+  147  "  0   c    ia(nx) = pointers to compressed coefficients                               
+  148  "  0   c    kin = number of compressed coefficients for the solution                   
+  149  "  0   c                                                                               
+  150  "  0   c output:                                                                       
+  151  "  0   c                                                                               
+  152  "  0   c    a(ni) =  uncompressed coefficient vector                                   
+  153  "  0   c             referencing original variables                                    
+  154  "  0   c                                                                               
+  155  "  0   c                                                                               
+  156  "  0   c evaluate linear model from compressed coefficients and                        
+  157  "  0   c uncompressed predictor matrix:                                                
+  158  "  0   c                                                                               
+  159  "  0   c call modval(ao,ia,kin,n,x,f);                                                 
+  160  "  0   c                                                                               
+  161  "  0   c input:                                                                        
+  162  "  0   c                                                                               
+  163  "  0   c    ao(nx) = compressed coefficient values for a solution                      
+  164  "  0   c    ia(nx) = pointers to compressed coefficients                               
+  165  "  0   c    kin = number of compressed coefficients for solution                       
+  166  "  0   c    n = number of predictor vectors (observations)                             
+  167  "  0   c    x(n,ni) = full (uncompressed) predictor matrix                             
+  168  "  0   c                                                                               
+  169  "  0   c output:                                                                       
+  170  "  0   c                                                                               
+  171  "  0   c    f(n) = model predictions                                                   
+  172  "  0   c                                                                               
+  173  "  0   c                                                                               
+  174  "  0   "                                                                               
+  175     0   subroutine pclasso(no,ni,x,y,w,theta,ng,mg,aa,ne,nx,nlam,ulam,                  
+  176     0        thr,maxit,verbose,ao,ia,kin,nlp,jerr);                                     
+  177     0   implicit double precision(a-h,o-z);                                             
+  178     0   double precision y(no),x(no,ni),w(no),aa(ni,*),ulam(nlam),ao(nx,nlam);          
+  179     0   integer ia(nx),kin(nlam),mg(ng+1),verbose;                                      
+  180     0   %fortran                                                                        
+                    double precision, dimension (:), allocatable :: a,r,sx,s,uu,wt            
+                    integer, dimension (:), allocatable :: mm                                 
+              %mortran                                                                        
+  184     0   allocate(a(1:ni),stat=jerr); if(jerr.ne.0) return;                              
+  185     0   allocate(r(1:no),stat=jerr); if(jerr.ne.0) return;                              
+  186     0   allocate(mm(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  187     0   allocate(sx(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  188     0   allocate(s(1:ni),stat=jerr); if(jerr.ne.0) return;                              
+  189     0   allocate(uu(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  190     0   allocate(wt(1:no),stat=jerr); if(jerr.ne.0) return;                             
+  191     0                                                                                   
+  192     0   wt=no*w/sum(w);                                                                 
+  193     0                                                                                   
+  194     0                                                                                   
+  195     0   k=1; a=0.0; uu=0; mm=0; s=0.0; /nlp,nin/=0; r=y; sw=sum(w);                     
+  196     0   <j=1,ni; sx(j)=sum(wt*x(:,j)**2);> ysq=sum(w*y**2)/sw;                          
+  197     0                                                                                   
+  198     0   rsq0=1.0;                                                                       
+  199     0   <m=1,nlam;  alm=ulam(m);                                                        
+  200     1   %fortran                                                                        
+                    if(verbose.eq.1) call dblepr("lambda=",-1,alm,1);                         
+              %mortran                                                                        
+  203     1     loop < nlp=nlp+1;                                                             
+  204     2         <kg=1,ng; lg=mg(kg+1)-mg(kg);                                             
+  205     3            <k=1,lg; j=k+mg(kg)-1; gj=dot_product(wt*r,x(:,j));                    
+  206     4               aj=a(j); u=gj+sx(j)*aj; aajj=aa(j,j-mg(kg)+1);                      
+  207     4                                                                                   
+  208     4               s(j)=uu(j)-aajj*aj;                                                 
+  209     4               u=u-theta*s(j); v=abs(u)-alm; a(j)=0.0;                             
+  210     4               if(v.gt.0.0) a(j)=sign(v,u)/(sx(j)+theta*aajj);                     
+  211     4                                                                                   
+  212     4               if(a(j).eq.aj) next;                                                
+  213     4                                                                                   
+  214     4               if mm(j).eq.0 < nin=nin+1; if(nin.gt.nx) exit;                      
+  215     5                  mm(j)=nin; ia(nin)=j;                                            
+  216     5               >                                                                   
+  217     4               del=a(j)-aj; r=r-del*x(:,j);                                        
+  218     4               <l=1,lg; jl=l+mg(kg)-1; uu(jl)=uu(jl)+del*aa(jl,k);>                
+  219     4                                                                                   
+  220     4            >                                                                      
+  221     3         >                                                                         
+  222     2         if(nin.gt.nx) exit;                                                       
+  223     2         if nlp.gt.maxit < jerr=-m; return;>                                       
+  224     2         rsq=sum(w*r**2)/(ysq*sw);                                                 
+  225     2         if(abs(rsq0-rsq).lt.thr) exit;                                            
+  226     2         rsq0=rsq;                                                                 
+  227     2                                                                                   
+  228     2      >                                                                            
+  229     1      if nin.gt.nx < jerr=-10000-m;  exit;>                                        
+  230     1      if(nin.gt.0) ao(1:nin,m)=a(ia(1:nin)); kin(m)=nin;                           
+  231     1      me=0; <j=1,nin; if(ao(j,m).ne.0.0) me=me+1;> if(me.gt.ne) exit;              
+  232     1                                                                                   
+  233     1   >                                                                               
+  234     0   deallocate(a,r,mm,sx,s,uu);                                                     
+  235     0   return;                                                                         
+  236     0   end;                                                                            
+  237     0   subroutine uncomp(ni,ao,ia,kin,a);                                              
+  238     0   implicit double precision(a-h,o-z);                                             
+  239     0   double precision ao(*),a(ni); integer ia(*);                                    
+  240     0   a=0.0; if(kin.gt.0) a(ia(1:kin))=ao(1:kin);                                     
+  241     0   return;                                                                         
+  242     0   end;                                                                            
+  243     0   subroutine modval(ao,ia,kin,n,x,f);                                             
+  244     0   implicit double precision(a-h,o-z);                                             
+  245     0   double precision ao(kin),x(n,*),f(n); integer ia(kin);                          
+  246     0   f=a0; if(kin.le.0) return;                                                      
+  247     0   <i=1,n; f(i)=f(i)+dot_product(ao(1:kin),x(i,ia(1:kin)));>                       
+  248     0   return;                                                                         
+  249     0   end;                                                                            
+  250     0                                                                                   
+  251     0   "                                                                               
+  252  "  0   c                                                                               
+  253  "  0   c                          Log-pclasso (8/12/18)                                
+  254  "  0   c                                                                               
+  255  "  0            For binomial loss                                                      
+  256  "  0   c                                                                               
+  257  "  0   c call logpclassp(no,ni,x,y,w,theta,ng,mg,aa,ne,nx,nlam,ulam,thr,maxit,a0,ao,ia,
+  258  "  0   c   no = number of observations                                                 
+  259  "  0   c   ni = number of predictor variables                                          
+  260  "  0   c   x(no,ni) = predictor data matrix (all columns centered)                     
+  261  "  0   c   y(no) = response vector (centered)                                          
+  262  "  0   c   w(no)= observation weights                                                  
+  263  "  0   c   theta = group regularization parameter                                      
+  264  "  0   c   ng = number of groups                                                       
+  265  "  0   c   mg(ng+1) = vector points to groups in aa                                    
+  266  "  0   c   aa(ni,max_group_size) = group covarience matricies in order                 
+  267  "  0   c   ne = maximum number of variables allowed to enter largest model             
+  268  "  0   c        (stopping criterion)                                                   
+  269  "  0   c   nx = maximum number of variables allowed to enter all models                
+  270  "  0   c        along path (memory allocation, nx > ne).                               
+  271  "  0   c   nlam = number of lambda values                                              
+  272  "  0   c   ulam(nlam) = user supplied lamda values in descending order                 
+  273  "  0   c   thr = convergence threshold for each lamda solution.                        
+  274  "  0   c      iterations stop when the maximum reduction in the criterion value        
+  275  "  0   c      as a result of each parameter update over a single pass                  
+  276  "  0   c      is less than thr times the null criterion value.                         
+  277  "  0   c      (suggested value, thr=1.0e-5)                                            
+  278  "  0   c   maxit = maximum allowed number of passes over the data for all lambda       
+  279  "  0   c      values (suggested values, maxit = 100000)                                
+  280  "  0   c   verbose: should  progress be printed?  0/1= no/yes                          
+  281  "  0   c                                                                               
+  282  "  0   c output:                                                                       
+  283  "  0   c                                                                               
+  284  "  0   c   a0(nlam)  estimated intercepts for each model                               
+  285  "  0   c   ao(nx,nlam) = compressed coefficient values for each solution               
+  286  "  0   c   ia(nx) = pointers to compressed coefficients                                
+  287  "  0   c   kin(nlam) = number of compressed coefficients for each solution             
+  288  "  0   c   nlp = actual number of passes over the data for all lamda values            
+  289  "  0   c   jerr = error flag:                                                          
+  290  "  0   c      jerr  = 0 => no error                                                    
+  291  "  0   c      jerr > 0 => fatal error - no output returned                             
+  292  "  0   c         jerr < 7777 => memory allocation error                                
+  293  "  0   C      jerr < 0 => non fatal error - partial output:                            
+  294  "  0   c         Solutions for larger lamdas (1:(k-1)) returned.                       
+  295  "  0   c         jerr = -k => convergence for kth lamda value not reached              
+  296  "  0   c            after maxit (see above) iterations.                                
+  297  "  0   c         jerr = -10000-k => number of non zero coefficients along path         
+  298  "  0   c            exceeds nx (see above) at kth lamda value.                         
+  299  "  0   c                                                                               
+  300  "  0   c                                                                               
+  301  "  0   c                                                                               
+  302  "  0   c least-squares utility routines:                                               
+  303  "  0   c                                                                               
+  304  "  0   c                                                                               
+  305  "  0   c uncompress coefficient vector for particular solution:                        
+  306  "  0   c                                                                               
+  307  "  0   c call uncomp(ni,ao,ia,kin,a)                                                   
+  308  "  0   c                                                                               
+  309  "  0   c input:                                                                        
+  310  "  0   c                                                                               
+  311  "  0   c    ni = total number of predictor variables                                   
+  312  "  0   c    ao(nx) = compressed coefficient values for the solution                    
+  313  "  0   c    ia(nx) = pointers to compressed coefficients                               
+  314  "  0   c    kin = number of compressed coefficients for the solution                   
+  315  "  0   c                                                                               
+  316  "  0   c output:                                                                       
+  317  "  0   c                                                                               
+  318  "  0   c    a(ni) =  uncompressed coefficient vector                                   
+  319  "  0   c             referencing original variables                                    
+  320  "  0   c                                                                               
+  321  "  0   c                                                                               
+  322  "  0   c evaluate linear model from compressed coefficients and                        
+  323  "  0   c uncompressed predictor matrix:                                                
+  324  "  0   c                                                                               
+  325  "  0   c call modval(ao,ia,kin,n,x,f);                                                 
+  326  "  0   c                                                                               
+  327  "  0   c input:                                                                        
+  328  "  0   c                                                                               
+  329  "  0   c    ao(nx) = compressed coefficient values for a solution                      
+  330  "  0   c    ia(nx) = pointers to compressed coefficients                               
+  331  "  0   c    kin = number of compressed coefficients for solution                       
+  332  "  0   c    n = number of predictor vectors (observations)                             
+  333  "  0   c    x(n,ni) = full (uncompressed) predictor matrix                             
+  334  "  0   c                                                                               
+  335  "  0   c output:                                                                       
+  336  "  0   c                                                                               
+  337  "  0   c    f(n) = model predictions                                                   
+  338  "  0   c                                                                               
+  339  "  0   c                                                                               
+  340  "  0   "                                                                               
+  341     0   subroutine logpclasso(no,ni,x,y,w,theta,ng,mg,aa,ne,nx,nlam,ulam,               
+  342     0        thr,maxit,verbose,a0,ao,ia,kin,nlp,jerr);                                  
+  343     0   implicit double precision(a-h,o-z);                                             
+  344     0   double precision y(no),x(no,ni),w(no),a0(nlam),aa(ni,*),ulam(nlam),ao(nx,nlam); 
+  345     0   integer ia(nx),kin(nlam),mg(ng+1),verbose;                                      
+  346     0   %fortran                                                                        
+                    double precision, dimension (:), allocatable :: a,r,sx,s,uu,wt,           
+                   *zz,pr                                                                     
+                    double precision, dimension (:), allocatable :: eta,eta0,warg             
+                    integer, dimension (:), allocatable :: mm                                 
+              %mortran                                                                        
+  352     0   allocate(a(1:ni),stat=jerr); if(jerr.ne.0) return;                              
+  353     0   allocate(r(1:no),stat=jerr); if(jerr.ne.0) return;                              
+  354     0   allocate(mm(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  355     0   allocate(sx(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  356     0   allocate(s(1:ni),stat=jerr); if(jerr.ne.0) return;                              
+  357     0   allocate(uu(1:ni),stat=jerr); if(jerr.ne.0) return;                             
+  358     0   allocate(wt(1:no),stat=jerr); if(jerr.ne.0) return;                             
+  359     0   allocate(zz(1:no),stat=jerr); if(jerr.ne.0) return;                             
+  360     0   allocate(pr(1:no),stat=jerr); if(jerr.ne.0) return;                             
+  361     0   allocate(eta0(1:no),stat=jerr); if(jerr.ne.0) return;                           
+  362     0   allocate(eta(1:no),stat=jerr); if(jerr.ne.0) return;                            
+  363     0   allocate(warg(1:no),stat=jerr); if(jerr.ne.0) return;                           
+  364     0                                                                                   
+  365     0   xminw=.0001;                                                                    
+  366     0   del2thr=.01;                                                                    
+  367     0                                                                                   
+  368     0                                                                                   
+  369     0   wt=no*w/sum(w);                                                                 
+  370     0                                                                                   
+  371     0    uu=0; mm=0; s=0.0; /nlp,nin/=0; r=y; sw=sum(w);                                
+  372     0   <j=1,ni; sx(j)=sum(wt*x(:,j)**2);> ysq=sum(w*y**2)/sw;                          
+  373     0                                                                                   
+  374     0   az=0.0; a=0.0; it=0; /nlp,nth,kp,kth/=0; r=y;                                   
+  375     0   warg=w; zz=y; eta=0; pr=1/(1+exp(-eta));                                        
+  376     0                                                                                   
+  377     0    w=0.25;                                                                        
+  378     0                                                                                   
+  379     0   w=warg*w;                                                                       
+  380     0   w=no*w/sum(w); sw=sum(w); a0=0; mlam=0;                                         
+  381     0                                                                                   
+  382     0   rsq0=1.0;                                                                       
+  383     0   <m=1,nlam;  alm=ulam(m);                                                        
+  384     1                                                                                   
+  385     1   %fortran                                                                        
+                    if(verbose.eq.1) call dblepr("lambda=",-1,alm,1);                         
+              %mortran                                                                        
+  388     1                                                                                   
+  389     1     loop <"beginning of IRLS loop  first few lines below are NEW"                 
+  390     2         loop < nlp=nlp+1; dlx=0.0;                                                
+  391     3          aj=az; del=dot_product(w,r)/sw;  "intercept"                             
+  392     3                  az=az+del; r=r-del;                                              
+  393     3         <kg=1,ng; lg=mg(kg+1)-mg(kg);                                             
+  394     4            <k=1,lg; j=k+mg(kg)-1; gj=dot_product(wt*r,x(:,j));                    
+  395     5               aj=a(j); u=gj+sx(j)*aj; aajj=aa(j,j-mg(kg)+1);                      
+  396     5                                                                                   
+  397     5               s(j)=uu(j)-aajj*aj;                                                 
+  398     5               u=u-theta*s(j); v=abs(u)-alm; a(j)=0.0;                             
+  399     5               if(v.gt.0.0) a(j)=sign(v,u)/(sx(j)+theta*aajj);                     
+  400     5                                                                                   
+  401     5               if(a(j).eq.aj) next;                                                
+  402     5                                                                                   
+  403     5               if mm(j).eq.0 < nin=nin+1; if(nin.gt.nx) exit;                      
+  404     6                  mm(j)=nin; ia(nin)=j;                                            
+  405     6               >                                                                   
+  406     5               del=a(j)-aj; r=r-del*x(:,j);                                        
+  407     5               <l=1,lg; jl=l+mg(kg)-1; uu(jl)=uu(jl)+del*aa(jl,k);>                
+  408     5           >                                                                       
+  409     4           > "end of kg=1,ng loop"                                                 
+  410     3                                                                                   
+  411     3                                                                                   
+  412     3         if(nin.gt.nx) exit;                                                       
+  413     3         if nlp.gt.maxit < jerr=-m; return;>                                       
+  414     3         rsq=sum(w*r**2)/(ysq*sw);                                                 
+  415     3                                                                                   
+  416     3         if(abs(rsq0-rsq).lt.thr) exit;                                            
+  417     3         rsq0=rsq;                                                                 
+  418     3          >"end of  loop statement"                                                
+  419     2                                                                                   
+  420     2                                                                                   
+  421     2        "NEW block"                                                                
+  422     2              eta0=eta; eta=zz-r;                                                  
+  423     2         del2=sum(abs(eta-eta0))/no;                                               
+  424     2         pr=1/(1+exp(-eta));                                                       
+  425     2                                                                                   
+  426     2                                                                                   
+  427     2           w=0.25;                                                                 
+  428     2                                                                                   
+  429     2                                                                                   
+  430     2          zz=eta+(y-pr)/w;                                                         
+  431     2                                                                                   
+  432     2                                                                                   
+  433     2         w=warg*w; w=no*w/sum(w); sw=sum(w);                                       
+  434     2         a0(m)=az; r=zz-eta;                                                       
+  435     2                                                                                   
+  436     2                                                                                   
+  437     2      > until del2.lt.del2thr;  " end of IRLS loop end of  NEW block"              
+  438     1                                                                                   
+  439     1                                                                                   
+  440     1                                                                                   
+  441     1                                                                                   
+  442     1      if nin.gt.nx < jerr=-10000-m;  exit;>                                        
+  443     1      if(nin.gt.0) ao(1:nin,m)=a(ia(1:nin)); kin(m)=nin;                           
+  444     1      me=0; <j=1,nin; if(ao(j,m).ne.0.0) me=me+1;> if(me.gt.ne) exit;              
+  445     1                                                                                   
+  446     1   >"end of m=1,nlam loop"                                                         
+  447     0                                                                                   
+  448     0   deallocate(a,r,mm,sx,s,uu);                                                     
+  449     0   return;                                                                         
+  450     0   end;                                                                            
+  451     0                                                                                   
+  452     0                                                                                   
+  453     0                                                                                   
+  454     0   %%                                                                              
+  455     0   %%                                                                              
+    0 mortran errors encountered

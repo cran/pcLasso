@@ -1,0 +1,125 @@
+temp.f:97:5:
+
+ 10132 continue
+     1
+Warning: Label 10132 at (1) defined but not used [-Wunused-label]
+temp.f:94:5:
+
+ 10130 do 10131 j=1,nin
+     1
+Warning: Label 10130 at (1) defined but not used [-Wunused-label]
+temp.f:72:5:
+
+ 10082 continue
+     1
+Warning: Label 10082 at (1) defined but not used [-Wunused-label]
+temp.f:68:5:
+
+ 10080 do 10081 l=1,lg
+     1
+Warning: Label 10080 at (1) defined but not used [-Wunused-label]
+temp.f:48:5:
+
+ 10050 do 10051 k=1,lg
+     1
+Warning: Label 10050 at (1) defined but not used [-Wunused-label]
+temp.f:76:5:
+
+ 10042 continue
+     1
+Warning: Label 10042 at (1) defined but not used [-Wunused-label]
+temp.f:46:5:
+
+ 10040 do 10041 kg=1,ng
+     1
+Warning: Label 10040 at (1) defined but not used [-Wunused-label]
+temp.f:43:5:
+
+ 10030 continue
+     1
+Warning: Label 10030 at (1) defined but not used [-Wunused-label]
+temp.f:40:5:
+
+ 10020 do 10021 m=1,nlam
+     1
+Warning: Label 10020 at (1) defined but not used [-Wunused-label]
+temp.f:37:5:
+
+ 10012 continue
+     1
+Warning: Label 10012 at (1) defined but not used [-Wunused-label]
+temp.f:34:5:
+
+ 10010 do 10011 j=1,ni
+     1
+Warning: Label 10010 at (1) defined but not used [-Wunused-label]
+temp.f:121:5:
+
+ 10142 continue
+     1
+Warning: Label 10142 at (1) defined but not used [-Wunused-label]
+temp.f:118:5:
+
+ 10140 do 10141 i=1,n
+     1
+Warning: Label 10140 at (1) defined but not used [-Wunused-label]
+temp.f:270:5:
+
+ 10282 continue
+     1
+Warning: Label 10282 at (1) defined but not used [-Wunused-label]
+temp.f:267:5:
+
+ 10280 do 10281 j=1,nin
+     1
+Warning: Label 10280 at (1) defined but not used [-Wunused-label]
+temp.f:231:5:
+
+ 10232 continue
+     1
+Warning: Label 10232 at (1) defined but not used [-Wunused-label]
+temp.f:227:5:
+
+ 10230 do 10231 l=1,lg
+     1
+Warning: Label 10230 at (1) defined but not used [-Wunused-label]
+temp.f:207:5:
+
+ 10200 do 10201 k=1,lg
+     1
+Warning: Label 10200 at (1) defined but not used [-Wunused-label]
+temp.f:235:5:
+
+ 10192 continue
+     1
+Warning: Label 10192 at (1) defined but not used [-Wunused-label]
+temp.f:205:5:
+
+ 10190 do 10191 kg=1,ng
+     1
+Warning: Label 10190 at (1) defined but not used [-Wunused-label]
+temp.f:197:5:
+
+ 10180 continue
+     1
+Warning: Label 10180 at (1) defined but not used [-Wunused-label]
+temp.f:195:5:
+
+ 10170 continue
+     1
+Warning: Label 10170 at (1) defined but not used [-Wunused-label]
+temp.f:192:5:
+
+ 10160 do 10161 m=1,nlam
+     1
+Warning: Label 10160 at (1) defined but not used [-Wunused-label]
+temp.f:171:5:
+
+ 10152 continue
+     1
+Warning: Label 10152 at (1) defined but not used [-Wunused-label]
+temp.f:168:5:
+
+ 10150 do 10151 j=1,ni
+     1
+Warning: Label 10150 at (1) defined but not used [-Wunused-label]
