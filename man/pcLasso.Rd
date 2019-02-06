@@ -8,7 +8,7 @@ pcLasso(x, y, w = rep(1, length(y)), family = c("gaussian",
   "binomial"), ratio = NULL, theta = NULL, groups = vector("list",
   1), lambda.min.ratio = ifelse(nrow(x) < ncol(x), 0.01, 1e-04),
   nlam = 100, lambda = NULL, standardize = F, SVD_info = NULL,
-  nv = NULL, propack = T, thr = 1e-4, maxit = 1e+05,
+  nv = NULL, propack = T, thr = 1e-04, maxit = 1e+05,
   verbose = FALSE)
 }
 \arguments{
@@ -69,8 +69,8 @@ values of the input matrix corresponding to group k.
   \eqn{d_{k1}^2 - d_{kj}^2} for the input matrix corresponding to group k.
 }
 Since the initial SVD of \code{x} can be the largest part of the overall 
-computation, we allow the user to compute it once and then re-use. See example 
-below.}
+computation, we allow the user to compute it once and then re-use. See 
+example below.}
 
 \item{nv}{Number of singular vectors to use in the singular value
 decompositions. If not specified, the full SVD is used.}
@@ -184,7 +184,7 @@ fit4 <- pcLasso(x, y, groups = groups, theta = 10)
 y2 <- sample(0:1, 100, replace = TRUE)
 fit5 <- pcLasso(x, y2, ratio = 0.8, family = "binomial")
 
-# example where SVD is computed once,  then re-used
+# example where SVD is computed once, then re-used
 fit1 <- pcLasso(x, y, ratio = 0.8)
 fit2 <- pcLasso(x, y, ratio = 0.8, SVD_info = fit1$SVD_info)
 

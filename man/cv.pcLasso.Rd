@@ -6,7 +6,7 @@
 \usage{
 cv.pcLasso(x, y, w = rep(1, length(y)), ratio = NULL, theta = NULL,
   groups = vector("list", 1), family = "gaussian", nfolds = 10,
-  foldid = NULL, keep = FALSE, verbose=FALSE, ...)
+  foldid = NULL, keep = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{x}{\code{x} matrix as in \code{pcLasso}.}

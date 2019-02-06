@@ -213,10 +213,13 @@ pcLasso <- function(x, y, w = rep(1,length(y)), family = c("gaussian", "binomial
 
     # scale x and y
     mx <- colMeans(x)
-    x <- scale(x, mx, F)
     if (standardize) {
-        x <- scale(x,T,T)
+        sx <- apply(x, 2, sd) * sqrt((n-1) / n)
+    } else {
+        sx <- rep(1, ncol(x))
     }
+    x <- scale(x, mx, sx)
+
     my <- NA
     if (family == "gaussian") {
         my <- mean(y)
@@ -302,7 +305,8 @@ pcLasso <- function(x, y, w = rep(1,length(y)), family = c("gaussian", "binomial
     mg <- c(1, cumsum(sizes) + 1)
 
     # get lambda sequence
-    ulam <- lambda
+    ulam <- lambda * n   # we need this multiplication by n because documentation has RSS/(2n),
+                         # but fortran code assumes RSS/2
     if (is.null(lambda)) {
         maxlam <- max(abs(t(x) %*% (y - mean(y))))
         if (family == "binomial") {
@@ -316,14 +320,20 @@ pcLasso <- function(x, y, w = rep(1,length(y)), family = c("gaussian", "binomial
                     family=family, verbose=verbose)
     
     nzero <- colSums(out$beta != 0)
-    if (family == "gaussian") a0 <- rep(my,nlam)
-    if (family == "binomial") a0 <- out$a0
-
-    # rescale beta values (if standardize = TRUE)
-    if (standardize) {
-        out$beta <- out$beta * matrix(attr(x, "scaled:scale"),
-                                      nrow = nrow(out$beta), ncol = ncol(out$beta))
+    
+    # get intercept sequence
+    if (family == "gaussian") {
+        a0 <- rep(my, nlam)
+    } else {
+        # if here, family must be binomial
+        a0 <- out$a0
     }
+    
+    # rescale intercept values
+    a0 <- a0 - colSums(out$beta * mx / sx)
+
+    # rescale beta values (beta will only change when standardize = TRUE)
+    out$beta <- t(scale(t(out$beta), F, sx))
 
     # convert beta values in expanded space to beta values in original space
     origbeta <- NULL
@@ -336,8 +346,12 @@ pcLasso <- function(x, y, w = rep(1,length(y)), family = c("gaussian", "binomial
         }
         orignzero <- colSums(origbeta != 0)
     }
-   
-    out <- list(beta=out$beta, origbeta=origbeta, a0=a0, lambda=out$ulam,
+
+    lambda <- out$ulam / n
+    if (family == "binomial") {
+        lambda=lambda / 4
+    }
+    out <- list(beta=out$beta, origbeta=origbeta, a0=a0, lambda=lambda,
                 nzero=nzero, orignzero=orignzero, jerr=out$jerr, theta=theta,
                 origgroups=origgroups, groups=groups, SVD_info = SVD_info, mx=mx,
                 origmx=origmx, my=my, overlap=overlap, nlp=out$nlp,

@@ -3,6 +3,7 @@
 useDynLib("pcLasso")
 importFrom("graphics", "abline", "axis", "points", "segments")
 importFrom("stats", "predict", "var")
+importFrom("stats", "sd")
 S3method(plot,cv.pcLasso)
 S3method(predict,cv.pcLasso)
 S3method(predict,pcLasso)

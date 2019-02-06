@@ -35,14 +35,11 @@
 predict.pcLasso <- function(object, xnew, ...) {
     if (object$overlap) {
         beta <- object$origbeta
-        mx <- object$origmx
     } else {
         beta <- object$beta
-        mx <- object$mx
     }
 
-    xnew <- scale(xnew, mx, F)
-    out <- object$a0 + xnew %*% beta
+    out <- t(object$a0 + t(xnew %*% beta))
     if (object$family == "binomial") {
         out <- 1 / (1 + exp(-out))
     }

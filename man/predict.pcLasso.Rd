@@ -16,8 +16,8 @@ be made.}
 currently not in use.}
 }
 \value{
-Predictions of \eqn{E(y|xnew)} which the model \code{object} makes at \code{xnew}. 
-These are probabilities for the binomial family.
+Predictions of \eqn{E(y|xnew)} which the model \code{object} makes at 
+\code{xnew}. These are probabilities for the binomial family.
 }
 \description{
 This function returns the predictions from a "\code{pcLasso}" object

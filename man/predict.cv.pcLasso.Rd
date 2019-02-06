@@ -23,9 +23,9 @@ currently not in use.}
 \value{
 Predictions which the cross-validated model makes for \code{xnew} at
 the optimal value of \code{lambda}. Note that the default is the "lambda.1se" for lambda,
-to make this function consistent with cv.glmnet in the glmnet pkg.
-The output is predictions of \eqn{E(y|xnew)}: these are probabilities for the 
-binomial family.
+to make this function consistent with \code{cv.glmnet} in the \code{glmnet} 
+package. The output is predictions of \eqn{E(y|xnew)}: these are probabilities 
+for the binomial family.
 }
 \description{
 This function returns the predictions for a new data matrix from a
