@@ -28,7 +28,7 @@ int *nlam,
 double *ulam,
 double *thr,
 int *maxit,
-double *verbose,
+int *verbose,
 double *ao,
 int *ia,
 int *kin,
@@ -52,45 +52,14 @@ INTSXP,
 REALSXP,
 REALSXP,
 INTSXP,
-REALSXP,
+INTSXP,
 REALSXP,
 INTSXP,
 INTSXP,
 INTSXP,
 INTSXP
 };
-void F77_SUB(uncomp)(
-int *ni,
-double *ao,
-int *ia,
-int *kin,
-double *a
-);
- 
-static R_NativePrimitiveArgType uncomp_t[] = {
-INTSXP,
-REALSXP,
-INTSXP,
-INTSXP,
-REALSXP
-};
-void F77_SUB(modval)(
-double *ao,
-int *ia,
-int *kin,
-int *n,
-double *x,
-double *f
-);
- 
-static R_NativePrimitiveArgType modval_t[] = {
-REALSXP,
-INTSXP,
-INTSXP,
-INTSXP,
-REALSXP,
-REALSXP
-};
+
 void F77_SUB(logpclasso)(
 int *no,
 int *ni,
@@ -107,7 +76,7 @@ int *nlam,
 double *ulam,
 double *thr,
 int *maxit,
-double *verbose,
+int *verbose,
 double *a0,
 double *ao,
 int *ia,
@@ -132,7 +101,7 @@ INTSXP,
 REALSXP,
 REALSXP,
 INTSXP,
-REALSXP,
+INTSXP,
 REALSXP,
 REALSXP,
 INTSXP,
@@ -143,8 +112,6 @@ INTSXP
 
 static R_FortranMethodDef fMethods[] = {
 FDEF(pclasso) ,
-FDEF(uncomp) ,
-FDEF(modval) ,
 FDEF(logpclasso) ,
 {NULL, NULL, 0}
 };

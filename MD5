@@ -1,4 +1,4 @@
-c823327819f3aa88598dded68fae31f5 *DESCRIPTION
+fd63d651a5dd0f7f4ee0e48afca6842e *DESCRIPTION
 1cf5be84babaa9a20ece57435c80b584 *NAMESPACE
 6df7b051ad3f25a3cd9860d941e566e3 *R/cv.pcLasso.R
 4e7a7064197b615e132b95847acd9f4e *R/helper.R
@@ -7,10 +7,10 @@ e02be558aa09db9d4cef1d3967d7906f *R/plot.cv.pcLasso.R
 3ae4ecd5c78296aac40d370961ada883 *R/predict.cv.pcLasso.R
 20b665213326c1743e27e536e0fbad00 *R/predict.pcLasso.R
 d5cc8c3a18742be88c03523662574409 *README.md
-eab8c9b9764e33a86d90561cf94c9a58 *build/vignette.rds
-77699c6a1ad4aecdd4bfd08b9fdc6ebd *inst/doc/pcLasso.R
+4b97d1527d45f75674730b18d9efcfd2 *build/vignette.rds
+8f3fa0ffebdab1231c87d7babadaf55a *inst/doc/pcLasso.R
 75ce1cdcb4d43514d20ca0d458ec97b2 *inst/doc/pcLasso.Rmd
-fb5ef383016da0e913922a3de473bc80 *inst/doc/pcLasso.html
+58c1c0b6ea0165321d87dec627dee12c *inst/doc/pcLasso.html
 6d2bba2fc7a8b4dd54527af39c7c0165 *inst/mortran/Fixed-pcLasso.m
 828b90a88f75e3bd7b233bc1b3ed0cb9 *inst/mortran/gfortran.out
 cbfd22c5363a172af5f7c673ebc5dd47 *inst/mortran/mo.for
@@ -25,5 +25,5 @@ a44d63543a2658631275c6a0dfa4d61b *man/pcLasso.Rd
 db7d19789301bba8d9872531417f3521 *man/predict.cv.pcLasso.Rd
 70ae6b6f7511bb5a85a75869c47a19f5 *man/predict.pcLasso.Rd
 0139d7f33481a72b749698cb69e9683b *src/pcLasso.f
-df6ef16450d886afc15fd6337c660888 *src/pclasso_init.c
+b7e8638fe1d6c1af6a1d44ae5189c27c *src/pclasso_init.c
 75ce1cdcb4d43514d20ca0d458ec97b2 *vignettes/pcLasso.Rmd

@@ -1,7 +1,7 @@
 Package: pcLasso
 Type: Package
 Title: Principal Components Lasso
-Version: 1.1
+Version: 1.2
 Imports: svd
 Author: Jerome Friedman, Kenneth Tay, Robert Tibshirani
 Maintainer: Rob Tibshirani <tibs@stanford.edu>
@@ -19,6 +19,6 @@ RoxygenNote: 6.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2019-02-06 00:11:42 UTC; robtibshirani
+Packaged: 2020-09-01 22:41:09 UTC; naras
 Repository: CRAN
-Date/Publication: 2019-02-06 12:30:03 UTC
+Date/Publication: 2020-09-03 22:22:19 UTC
